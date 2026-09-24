@@ -7,34 +7,60 @@ const ctx = canvas.getContext("2d")
 // vx ---> Define a velocidade horizontal
 
 
-const player = {x: 40, y: 160, w: 32, h: 32, vx: 120}
+const player = {x: 40, y: 160, w: 32, h: 32, vx: 120, vy: 120}
 
 
 let last = 0 // Marca a posição do quadro anterior
 
 
-function update (dt) {
-    player.x += player.vx * dt
-    // Bateu na parede esquerda ou direita? Inverte o sinal do vx
+function update(dt) {
+    player.x += player.vx * dt; //Eu utilizei o dt porque quando eu multiplico por ele(dt), ele altera o tempo entre um quadro e outro
+    player.y += player.vy * dt;
 
+    // Vai Quica nas laterais
+    if (player.x - player.w / 2 <= 0) {
+        player.x = player.w / 2;
+        player.vx *= -1;
+    }
 
-    if (player.x < 0 || player.x + player.w > canvas.width) {
-        player.vx *= -1  
+    if (player.x + player.w / 2 >= canvas.width) {
+        player.x = canvas.width - player.w / 2;
+        player.vx *= -1;
+    }
+
+    // Quica em cima e embaixo
+    if (player.y - player.h / 2 <= 0) {
+        player.y = player.h / 2;
+        player.vy *= -1;
+    }
+
+    if (player.y + player.h / 2 >= canvas.height) {
+        player.y = canvas.height - player.h / 2;
+        player.vy *= -1;
     }
 }
 
-
 function draw () {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-
     ctx.fillStyle = "#4ade80"
-    ctx.fillRect(player.x, player.y, player.h, player.w)
+    ctx.beginPath();
+    ctx.arc(
+    player.x,
+    player.y,
+    player.w / 2,
+    0,
+    Math.PI * 2
+    );
 
+    ctx.fill();
 
+//desenha o texto
     ctx.fillStyle = "#fff"
-    ctx.fillRect(player.x, player.y, player.h, player.w)
-
+    ctx.fillText(
+        "O DeltaTime - dt independe da taxa de quadros",
+        12,
+        20
+        );
 
     ctx.fillText("O DeltaTime - dt independe da taxa de quadros", 12, 20)
 }
