@@ -1,114 +1,197 @@
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-const score1 = document.getElementById("score");
-const state1 = document.getElementById("state");
-const best1 = document.getElementById("snake-best");
-
-const CELL = 24; //aceesar em todo o programa
-const COLS = canvas.width/CELL; // 480 dividido por 24 = 80 //acesso de colunas
-const ROWS = canvas.height/CELL; // 48
-const TICKS_MS = 110; // A cobra se move uma célula a cada 110 milesegundos
-
+const canvas = document.getElementById("game")
+const ctx = canvas.getContext("2d")
+const scoreEl = document.getElementById("score")
+const stateEl = document.getElementById("state")
+const bestEl = document.getElementById("snake-best")
+const obstacle = {x: 8, y: 8, w: 4, h: 1}
+const CELL = 24
+const COLS = canvas.width / CELL // 480 / 24 = 20
+const ROWS = canvas.height / CELL
+const TICKS_MS = 110 // A cobra se move 1 céula a cada 110ms
+ 
 const STATES = {
     READY: "PRONTO",
     PLAYING: "JOGANDO",
     PAUSED: "PAUSE",
     OVER: "GAME OVER"
-};
-
-// x, y ---> Posicionar o objeto
-// w, h ---> Definir o tamanho do personagem
-// vx ---> Define a velocidade horizontal
-
-
-//const player = {x: 40, y: 160, w: 32, h: 32, vx: 120, vy: 120}
-
-let state = STATES.READY;
+}
+ 
+// const player = {x: 40, y: 160, w: 32, h: 32, vx: 120}
+ 
+let state = STATES.READY
 let snake = []
 let dir = {x: 1, y: 0}
 let nextDir = {x: 1, y: 0}
 let food = {x: 10, y: 10}
-let score = 0;
-let acc = 0; //Acumulador de tempo
+let score = 0
+let acc = 0 // Acumulador de tempo
 let last = 0 // Marca a posição do quadro anterior
-let best = localStorage.getItem("snake-best") || 0;
-
-function reset(){
-    const midX = Math.floor(COLS/2);
-    const midY = Math.floor(ROWS/2);
-
+let best = localStorage.getItem("snake-best") || 0
+ 
+function reset () {
+    const midX = Math.floor(COLS/2)
+    const midY = Math.floor(ROWS/2)
+ 
     snake = [
-        {x: midX, y: midY},
-        {x: midX -1, y: midY}, 
-        {x: midX -2, y: midY}, 
+        { x: midX, y: midY },
+        { x: midX- 1, y: midY },
+        { x: midX- 2, y: midY },
     ]
+ 
+    dir = { x: 1, y: 0 }
+    nextDir = { x: 1, y: 0 }
+    score = 0
+    scoreEl.textContent = score
+    spawnApple()
+    state = STATES.READY
+    stateEl.textContent = state
+ 
 }
-// o .floor faz com que eu faça divisão por 2 numeros
-
-function update(dt) {
-    player.x += player.vx * dt; //Eu utilizei o dt porque quando eu multiplico por ele(dt), ele altera o tempo entre um quadro e outro
-    player.y += player.vy * dt;
-
-    // Vai Quica nas laterais
-    if (player.x - player.w / 2 <= 0) {
-        player.x = player.w / 2;
-        player.vx *= -1;
+ 
+function spawnApple () {
+    let valid
+    do {
+        food = {
+            x: Math.floor(Math.random() * COLS),
+            y: Math.floor(Math.random() * ROWS)
+        }
+        const onSnake = snake.some(
+            s => s.x === food.x && s.y === food.y
+        )
+        const onObstacle =
+            food.x >= obstacle.x &&
+            food.x < obstacle.x + obstacle.w &&
+            food.y >= obstacle.y &&
+            food.y < obstacle.y + obstacle.h
+        valid = !onSnake && !onObstacle
+    } while (!valid)
+}
+function setDirection (x, y) {
+    if (dir.x + x === 0)
+        return
+    nextDir = { x, y }
+}
+ 
+window.addEventListener("keydown", (e) => {
+    const key = e.key.toLocaleLowerCase();
+    if(["arrowup", "arrowdown", "arrowleft", "arrowright".includes(key)] || key === " "){
+        e.preventDefault();
     }
-
-    if (player.x + player.w / 2 >= canvas.width) {
-        player.x = canvas.width - player.w / 2;
-        player.vx *= -1;
+ 
+    if (key === "arrowup" || key === "w")
+        setDirection(0, -1)
+    if (key === "arrowdown" || key === "s")
+        setDirection(0, 1)
+    if (key === "arrowleft" || key === "a")
+        setDirection(-1, 0)
+    if (key === "arrowright" || key === "d")
+        setDirection(1, 0)
+    if (key === "r")
+        reset();
+    if (key === " " ) {
+        if (state === STATES.PLAYING) {
+            state = STATES.PAUSED      
+        } else if (state === STATES.PAUSED || state === STATES.READY) {
+            state = STATES.PLAYING
+        }
+        stateEl.textContent = state
     }
-
-    // Quica em cima e embaixo
-    if (player.y - player.h / 2 <= 0) {
-        player.y = player.h / 2;
-        player.vy *= -1;
+ 
+    if (state === STATES.READY && ["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].includes(key)) {
+        state = STATES.PLAYING
+        stateEl.textContent = state
     }
-
-    if (player.y + player.h / 2 >= canvas.height) {
-        player.y = canvas.height - player.h / 2;
-        player.vy *= -1;
+})
+ 
+function tick () {
+    dir = nextDir
+    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y }
+ 
+    const hitwall = head.x < 0 || head.y < 0 || head.x >= COLS || head.y >= ROWS
+    const hitbody = snake.some((s) => s.x === head.x && s.y === head.y)
+    const hitObstacle =
+    head.x >= obstacle.x &&
+    head.x < obstacle.x + obstacle.w &&
+    head.y >= obstacle.y &&
+    head.y < obstacle.y + obstacle.h
+ 
+    if (hitwall || hitbody || hitObstacle) {
+        state = STATES.OVER
+        stateEl.textContent = state
+ 
+        if (score > best) {
+            best = score
+            localStorage.setItem("snake-best", String(best))
+            bestEl.textContent = best
+        }
+ 
+        return
+    }
+ 
+    snake.unshift(head) // Criar uma nova cabeça
+ 
+    if (head.x === food.x && head.y === food.y) {
+        score += 10
+        scoreEl.textContent = score
+        spawnApple() // Comer a maçã, não remove um pedaço da cauda.
+    } else {
+        snake.pop() // Não comeu, fila continua
     }
 }
-
+ 
+function update (dt) {
+    player.x += player.vx * dt
+    // Bateu na parede esquerda ou direita? Inverte o sinal do vx
+ 
+    if (player.x < 0 || player.x + player.w > canvas.width) {
+        player.vx *= -1  
+    }
+}
+ 
+function drawCell (x, y, color) {
+    ctx.fillStyle = color
+    ctx.fillRect(x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2)
+}
+ 
 function draw () {
+    ctx.fillStyle = "#022c22"
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.fillStyle = "#4ade80"
-    ctx.beginPath();
-    ctx.arc(
-    player.x,
-    player.y,
-    player.w / 2,
-    0,
-    Math.PI * 2
-    );
-
-    ctx.fill();
-
-//desenha o texto
-    ctx.fillStyle = "#fff"
-    ctx.fillText(
-        "O DeltaTime - dt independe da taxa de quadros",
-        12,
-        20
-        );
-
-    ctx.fillText("O DeltaTime - dt independe da taxa de quadros", 12, 20)
-}
-
-
-function loop (ts) {
-    if (!last) {
-        last = ts
+    for (let x = obstacle.x; x < obstacle.x + obstacle.w; x++) {
+        for (let y = obstacle.y; y < obstacle.y + obstacle.h; y++) {
+            drawCell(x, y, "#dc2626")
+        }
     }
-
-
-    const dt = Math.min(0.05, (ts - last)/1000) // 1ms = 1s /1000
-    update(dt)
+ 
+    drawCell(food.x, food.y, "#facc15")
+    snake.forEach((s, i) =>
+        drawCell(s.x, s.y, i === 0 ? "#4775eb" : "#6689e1"))
+ 
+    if (state !== STATES.PLAYING) {
+        ctx.fillStyle = "rgba(15, 23, 42, 0.65)"
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.textAlign = "center"
+        ctx.font = "bold 28px Segoe UI"
+        ctx.fillText(state, canvas.width / 2, canvas.height /2)
+        ctx.font = "16px Segoe UI"
+        ctx.fillText(state === STATES.OVER ? "Pressione R para reiniciar" : "Pressione ESPAÇO para jogar", canvas.width / 2, canvas.height / 2 + 32)
+    }
+}
+ 
+function loop (ts) {
+    const dt = ts - last
+    last = ts
+ 
+    if (state === STATES.PLAYING) {
+        acc += dt
+        while (acc >= TICKS_MS) {
+            tick()
+            acc -= TICKS_MS
+        }
+    }
+ 
     draw()
     requestAnimationFrame(loop)
 }
-
-
+ 
+reset()
 requestAnimationFrame(loop) // Responsável por executar o primeiro disparo
