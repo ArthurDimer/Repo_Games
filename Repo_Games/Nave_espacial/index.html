@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artilheiro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Artilheiro Defender</h1>
+        <p>Setas ← e → ou A e D para mover. Espaço para ATIRAR. P para PAUSAR</p>
+    </header>
+    <div class="hud">
+        <span>Pontos: <strong id="score">0</strong></span>
+        <span>Vidas: <strong id="lives">3</strong></span>
+        <span>Ondas: <strong id="wave">1</strong></span>
+    </div>
+    <canvas id="game" width="480" height="640"></canvas>
+<section class="docs">
+    <h2>Mini Game Espacial do Arthur Dimer de Oliveira</h2>
+    <p>
+        Quando um inimigo escapa pela parte inferior da tela, o jogador perde
+        1 vida. O jogador deve sentir urgência porque cada inimigo ignorado
+        aproxima a derrota. A movimentação constante e a precisão dos tiros
+        são essenciais para sobreviver. As ondas ficam progressivamente mais
+        difíceis. A partida termina quando as vidas chegam a zero.
+    </p>
+
+    <h2>Créditos</h2>
+    <p>
+        Arthur Dimer de Oliveira e Jefferson Tijik
+    </p>
+</section>
+    <script src="script.js"></script>
+</body>
+</html>
